@@ -1,51 +1,41 @@
-from flask import Flask, jsonify, Response
-from riot.summoner import PublicSummoner
 from rtmp.client import RtmpClient
-from time import clock
+from flask import Flask, jsonify
 
 app = Flask(__name__)
-
-class pyRit:
-    def __init__(self, region, user, password):
-        self.client = RtmpClient(region, user, password)
-
-    def start(self, debug=False):
-        self.client.connect()
-        app.run(threaded=True, debug=debug)
-
-    def waitForMessage(self, service, operation, params):
-        msg = None
-        invokeId = self.client.invoke(service, operation, params)
-        timeOut = clock() + 10000
-
-        while msg is None or clock() >= timeOut:
-            msg = self.client.getPendingRequest(invokeId)
-
-        return msg
+client = RtmpClient('NA', '', '')
 
 
-    @app.route('/history/<acctId>')
-    def getRecentGames(self, acctId):
-        msg = self.waitForMessage('playerStatsService', 'getRecentGames', [int(float(acctId))])
+@app.route('/history/<acctId>')
+def getRecentGames(acctId):
+    msg = None
+    invokeId = client.invoke('playerStatsService', 'getRecentGames', [int(float(acctId))], None)
 
-        if msg == -1 or msg is None:
-            return jsonify({'error': 'Invalid accountId'})
+    while msg is None:
+        msg = client.getPendingRequest(invokeId)
 
-        return jsonify(msg['body'])
+    return jsonify(msg['cmd'][3].body)
 
 
-    @app.route('/public/<acctId>')
-    def getAllPublicSummonerDataByAccount(self, acctId):
-        msg = self.waitForMessage('summonerService', 'getAllPublicSummonerDataByAccount', [int(float(acctId))])
+@app.route('/public/<acctId>')
+def getAllPublicSummonerDataByAccount(acctId):
+    msg = None
+    invokeId = client.invoke('summonerService', 'getAllPublicSummonerDataByAccount', [int(float(acctId))], None)
 
-        if msg == -1 or msg['result'] == u'_error' or msg['body'] is None:
-            return jsonify({'error': 'Invalid accountId'})
+    while msg is None:
+        msg = client.getPendingRequest(invokeId)
 
-        return jsonify(msg['body'])
+    return jsonify(msg['cmd'][3].body)
 
-    @app.route('/name/<summonerName>')
-    def getSummonerByName(self, summonerName):
-        msg = self.waitForMessage('summonerService', 'getSummonerByName', [summonerName])
+@app.route('/name/<summonerName>')
+def getSummonerByName(summonerName):
+    msg = None
+    invokeId = client.invoke('summonerService', 'getSummonerByName', [summonerName], None)
 
-        summoner = PublicSummoner(msg['body'])
-        return Response(summoner.toJson(), mimetype='application/json')
+    while msg is None:
+        msg = client.getPendingRequest(invokeId)
+
+    return jsonify(msg['cmd'][3].body)
+
+
+client.connect()
+app.run(host='0.0.0.0')

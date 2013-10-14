@@ -81,11 +81,8 @@ class RtmpClient:
         if invokeId in self.pendingRequests:
             msg = self.pendingRequests[invokeId]
 
-            if msg is None:
-                return None
-
-            return {'result': msg['cmd'][0], 'body': msg['cmd'][3].body}
-        return -1
+            return msg
+        return None
 
     def heartbeatThread(self):
         heartbeatCount = 1
@@ -134,7 +131,7 @@ class RtmpClient:
         self.stream.write(invoke)
         return invokeId
 
-    def invoke(self, destination, operation, body, callback=None):
+    def invoke(self, destination, operation, body, callback):
         headers = TypedObject('')
 
         headers['DSRequestTimeout'] = 60
