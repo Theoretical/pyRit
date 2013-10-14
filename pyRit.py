@@ -51,5 +51,5 @@ class pyRit:
         return Response(summoner.toJson(), mimetype='application/json')
 
 if __name__ == "__main__":
-    p = pyRit('NA', 'idlefear44', 'mir@ge007')
+    p = pyRit('NA', 'user', 'pass')
     p.start(True)
