@@ -62,8 +62,10 @@ class RtmpClient:
     def processMessages(self):
         while True:
             msg = self.reader.next()
-            if msg == -1:
+
+            if msg == None:
                 continue
+
             print 'Processing: {0}'.format(msg)
             if msg['msg'] == defs.DataTypes.COMMAND:
                 self.dsid = msg['cmd'][3]['id']

@@ -48,7 +48,7 @@ class PacketReader:
         try:
             header = defs.Header.decode(self.stream)
         except:
-            return -1
+            return None
 
         if header.datatype == defs.DataTypes.NONE:
             header = self.lastHeader
