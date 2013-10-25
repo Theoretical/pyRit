@@ -12,7 +12,6 @@ from pyamf import TypedObject
 from pyamf.flex.messaging import RemotingMessage, CommandMessage
 from riot.region import Region
 from riot.login import GetLoginToken, AuthenticationCredentials
-from rtmp import defs
 
 
 class RtmpClient:
@@ -67,11 +66,11 @@ class RtmpClient:
                 continue
 
             print 'Processing: {0}'.format(msg)
-            if msg['msg'] == defs.DataTypes.COMMAND:
+            if msg['msg'] == rtmp.decoder.DataTypes.COMMAND:
                 self.dsid = msg['cmd'][3]['id']
                 self.login(self.user, self.password)
 
-            if msg['msg'] == defs.DataTypes.INVOKE:
+            if msg['msg'] == rtmp.decoder.DataTypes.INVOKE:
                 invokeId = msg['cmd'][1]
                 if invokeId in self.callbacks:
                     self.callbacks[invokeId](msg['cmd'][0], msg['cmd'][3])

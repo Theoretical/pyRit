@@ -47,7 +47,6 @@ def GetLoginToken(user, password, region):
         if  id - cur < 0:
             time.sleep(delay/100)
 
-        print 'https://lq.{0}.lol.riotgames.com/login-queue/rest/queue/authToken/{1}'.format(region, user.lower())
         while True:
             try:
                 req = urllib2.urlopen('https://lq.{0}.lol.riotgames.com/login-queue/rest/queue/authToken/{1}'.format(region, user.lower()))
@@ -61,9 +60,9 @@ class RemoteClass(object):
     def __init__(self, alias):
         self.alias = alias
 
-    def __call__(self, klass):
-        pyamf.register_class(klass, self.alias)
-        return klass
+    def __call__(self, classType):
+        pyamf.register_class(classType, self.alias)
+        return classType
 
 
 @RemoteClass(alias='com.riotgames.platform.login.AuthenticationCredentials')

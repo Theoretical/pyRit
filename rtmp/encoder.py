@@ -1,6 +1,6 @@
 import time
 import uuid
-from pyamf import amf0, amf3, TypedObject
+from pyamf import amf0, TypedObject
 
 class AmfEncoder:
     def __init__(self):
