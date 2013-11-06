@@ -12,5 +12,5 @@ class PublicSummoner(serialize.Serialize):
         self.summonerLevel = body['summonerLevel']
         self.acctId = body['acctId']
         self.summonerId = body['summonerId']
-        #self.revisionDate = body['revisionDate']
+        self.revisionDate = str(body['revisionDate'])
 

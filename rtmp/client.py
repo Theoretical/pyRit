@@ -16,7 +16,7 @@ from riot.login import GetLoginToken, AuthenticationCredentials
 
 class RtmpClient:
     def __init__(self, regionId, user, password):
-        self.version = '3.12.13_10_03_21_10'
+        self.version = '3.13.13_10_28_21_11'
         self.region = Region.getRegion(regionId)
         self.host = self.region[0]
         self.port = int(self.region[1])
@@ -25,16 +25,20 @@ class RtmpClient:
         self.pendingRequests = {}
         self.invokeId = 1
         self.encoder = rtmp.encoder.AmfEncoder()
-        self.token = GetLoginToken(user, password, self.region[2])
         self.user = user
         self.password = password
         self.auth = False
-        print 'Connecting to region: {0}'.format(self.region)
 
     def connect(self):
+        print 'Connecting to region: {0}'.format(self.region)
+
+        self.token = GetLoginToken(self.user, self.password, self.region[2])
         self.socket = ssl.SSLSocket(ssl.socket(), ssl_version=3)
         self.socket.connect((self.host, self.port))
-        self.doHandshake()
+
+        if not self.doHandshake():
+            return False
+
         self.socket.setblocking(0)
         self.stream = rtmp.decoder.FileBuffer(self.socket.makefile())
         self.reader = rtmp.decoder.PacketReader(self.stream)
@@ -56,18 +60,20 @@ class RtmpClient:
         stream = self.encoder.encodeConnect(msg)
 
         self.writeBytes(stream)
-        threading.Thread(target=self.processMessages).start()
+        threading.Thread(target=self._processMessages).start()
 
-    def processMessages(self):
+        return True
+
+    def _processMessages(self):
         while True:
             msg = self.reader.next()
 
-            if msg == None:
+            if msg is None:
                 continue
 
             print 'Processing: {0}'.format(msg)
             if msg['msg'] == rtmp.decoder.DataTypes.COMMAND:
-                self.dsid = msg['cmd'][3]['id']
+                self.dsId = msg['cmd'][3]['id']
                 self.login(self.user, self.password)
 
             if msg['msg'] == rtmp.decoder.DataTypes.INVOKE:
@@ -88,7 +94,7 @@ class RtmpClient:
             return {'result': msg['cmd'][0], 'body': msg['cmd'][3].body}
         return -1
 
-    def heartbeatThread(self):
+    def _heartbeatThread(self):
         heartbeatCount = 1
         while True:
             if self.auth:
@@ -126,7 +132,7 @@ class RtmpClient:
         self.sendMessage(msg)
         self.auth = True
 
-        threading.Thread(target=self.heartbeatThread).start()
+        threading.Thread(target=self._heartbeatThread).start()
 
     def sendMessage(self, msg):
         invokeId = self.nextInvokeId()
@@ -139,7 +145,7 @@ class RtmpClient:
         headers = TypedObject('')
 
         headers['DSRequestTimeout'] = 60
-        headers['DSId'] = self.dsid
+        headers['DSId'] = self.dsId
         headers['DSEndpoint'] = 'my-rtmps'
 
         msg = RemotingMessage(destination=destination, operation=operation, body=body, headers=headers, messageId=str(uuid.uuid4()))
@@ -155,7 +161,7 @@ class RtmpClient:
         headers = TypedObject('')
 
         headers['DSRequestTimeout'] = 60
-        headers['DSId'] = self.dsid
+        headers['DSId'] = self.dsId
         headers['DSEndpoint'] = 'my-rtmps'
 
         msg = CommandMessage(destination=destination, operation=operation, body=body, headers=headers, messageId=str(uuid.uuid4()))

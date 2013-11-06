@@ -1,13 +1,9 @@
 from flask import Flask, jsonify, Response
-from riot.summoner import PublicSummoner
-from riot.stats import  RecentGames
-from rtmp.client import RtmpClient
-from time import clock
-
+from riot.client import Client
 
 class pyRit:
     def __init__(self, region, user, password):
-        self.client = RtmpClient(region, user, password)
+        self.client = Client(region, user, password)
         self.app = Flask(__name__)
         self.buildRoutes()
 
@@ -16,7 +12,7 @@ class pyRit:
         self.app.run(threaded=True, debug=debug)
 
     def buildRoutes(self):
-        self.app.add_url_rule('/history/<acctId>', 'history', self.getRecentGames)
+        self.app.add_url_rule('/history/<summoner>', 'history', self.getRecentGames)
         self.app.add_url_rule('/public/<acctId>', 'public', self.getAllPublicSummonerDataByAccount)
         self.app.add_url_rule('/name/<summonerName>', 'name', self.getSummonerByName)
         self.app.add_url_rule('/game/<summonerName>', 'game', self.getGameInProgress)
@@ -26,42 +22,23 @@ class pyRit:
         self.app.add_url_rule('/store/', 'store', self.getStoreUrl)
         self.app.add_url_rule('/acct/', 'acct', self.getAcctInfo)
 
-    def waitForMessage(self, service, operation, params):
-        msg = None
-        invokeId = self.client.invoke(service, operation, params)
-        timeOut = clock() + 10000
-
-        while msg is None or clock() >= timeOut:
-            msg = self.client.getPendingRequest(invokeId)
-
-        return msg
-
-    def getRecentGames(self, acctId):
-        msg = self.waitForMessage('playerStatsService', 'getRecentGames', [int(float(acctId))])
-
-        if msg == -1 or msg is None:
-            return jsonify({'error': 'Invalid accountId'})
-
-        recent = RecentGames(msg['body'])
-        return Response(recent.toJson(), mimetype='application/json')
+    def getRecentGames(self, summoner):
+        if summoner.isdigit():
+            recent = self.client.getPlayerStatsService().getRecentGames(summoner)
+            return Response(recent.toJson(), mimetype='application/json')
+        else:
+            publicSummoner = self.client.getSummonerService().getSummonerByName(summoner)
+            recent = self.client.getPlayerStatsService().getRecentGames(publicSummoner.acctId)
+            return Response(recent.toJson(), mimetype='application/json')
 
     def getAllPublicSummonerDataByAccount(self, acctId):
-        msg = self.waitForMessage('summonerService', 'getAllPublicSummonerDataByAccount', [int(float(acctId))])
-
-        if msg == -1 or msg['result'] == u'_error' or msg['body'] is None:
-            return jsonify({'error': 'Invalid accountId'})
-
-        recent = RecentGames(msg['body'])
-        return jsonify(msg['body'])
+        pass
 
     def getStoreUrl(self):
-        msg = self.waitForMessage('loginService', 'getStoreUrl', [])
-        return msg['body']
+        pass
 
     def getSummonerByName(self, summonerName):
-        msg = self.waitForMessage('summonerService', 'getSummonerByName', [summonerName])
-
-        summoner = PublicSummoner(msg['body'])
+        summoner = self.client.getSummonerService().getSummonerByName(summonerName)
         return Response(summoner.toJson(), mimetype='application/json')
 
     def getAcctInfo(self):
