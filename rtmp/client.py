@@ -140,6 +140,7 @@ class RtmpClient:
         self.sendMessage(msg)
         self.auth = True
 
+        print 'Authenticated as user: {0}'.format(self.user)
         Thread(target=self._heartbeatThread).start()
 
     def sendMessage(self, msg):

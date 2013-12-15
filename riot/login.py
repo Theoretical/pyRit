@@ -33,8 +33,6 @@ def GetLoginToken(user, password, region):
                 cur = tick['current']
 
         while id - cur > rate:
-            print 'Currently in position: {0} |  delay: {1}'.format(id - cur, delay)
-
             time.sleep(delay)
             req = urllib2.urlopen('https://lq.{0}.lol.riotgames.com/login-queue/rest/queue/ticker/{1}'.format(region, champ))
             args = json.loads(req.read())
