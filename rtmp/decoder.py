@@ -4,8 +4,6 @@ from pyamf import amf0
 
 
 class Header:
-    __slots__ = ('streamId', 'dataType', 'timestamp', 'bodyLength', 'channelId', 'full')
-
     def __init__(self, channelId, timestamp=-1, dataType=-1,
                  bodyLength=-1, streamId=-1, full=False):
         self.channelId = channelId

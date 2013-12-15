@@ -1,6 +1,8 @@
 from time import clock
 from riot.summoner import PublicSummoner
 from riot.stats import RecentGames
+from riot.leagues import SummonerLeagues
+
 
 class BaseService:
     def __init__(self, client):
@@ -16,6 +18,14 @@ class BaseService:
 
         return msg
 
+
+class LoginService(BaseService):
+    def __init__(self, client):
+        BaseService.__init__(self, client)
+        self.name = 'loginService'
+
+    def getStoreUrl(self):
+        return self.waitForMessage(self.name, 'getStoreUrl', [])['body']
 
 class SummonerService(BaseService):
     def __init__(self, client):
@@ -46,5 +56,23 @@ class PlayerStatsService(BaseService):
 
     def getAggregatedStats(self, acctId, season):
         msg = self.waitForMessage(self.name, 'getAggregatedStats', [acctId, season])
-        return msg
+        return msg['body']
 
+
+class LeaguesServiceProxy(BaseService):
+    def __init__(self, client):
+        BaseService.__init__(self, client)
+        self.name = 'leaguesServiceProxy'
+
+    def getAllLeaguesForPlayer(self, summonerName):
+        msg = self.waitForMessage(self.name, 'getAllLeaguesForPlayer', [summonerName])
+        return SummonerLeagues(msg['body'])
+
+
+class GameService(BaseService):
+    def __init__(self, client):
+        BaseService.__init__(self, client)
+        self.name = 'gameService'
+
+    def retrieveInProgressSpectatorGameInfo(self, summonerName):
+        return self.waitForMessage(self.name, 'retrieveInProgressSpectatorGameInfo', [summonerName])['body']

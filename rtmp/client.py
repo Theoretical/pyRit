@@ -3,38 +3,42 @@ import datetime
 import os
 import rtmp.decoder
 import rtmp.encoder
-import threading
 import time
 import uuid
 
-from gevent import ssl, spawn
+from gevent.ssl import SSLSocket, socket, SSLError
 from pyamf import TypedObject
 from pyamf.flex.messaging import RemotingMessage, CommandMessage
 from riot.region import Region
 from riot.login import GetLoginToken, AuthenticationCredentials
+from threading import Thread
 
 
 class RtmpClient:
-    def __init__(self, regionId, user, password):
-        self.version = '3.13.13_10_28_21_11'
+    socket = None
+    invokeId = 1
+    auth = False
+    connected = False
+    callbacks = {}
+    pendingRequests = {}
+
+    def __init__(self, regionId, user, password, version):
         self.region = Region.getRegion(regionId)
-        self.host = self.region[0]
-        self.port = int(self.region[1])
-        self.socket = None
-        self.callbacks = {}
-        self.pendingRequests = {}
-        self.invokeId = 1
-        self.encoder = rtmp.encoder.AmfEncoder()
         self.user = user
         self.password = password
-        self.auth = False
+        self.version = version
+
+        self.host = self.region[0]
+        self.port = int(self.region[1])
+        self.encoder = rtmp.encoder.AmfEncoder()
 
     def connect(self):
         print 'Connecting to region: {0}'.format(self.region)
 
         self.token = GetLoginToken(self.user, self.password, self.region[2])
-        self.socket = ssl.SSLSocket(ssl.socket(), ssl_version=3)
+        self.socket = SSLSocket(socket(), ssl_version=3)
         self.socket.connect((self.host, self.port))
+        self.connected = True
 
         if not self.doHandshake():
             return False
@@ -60,18 +64,22 @@ class RtmpClient:
         stream = self.encoder.encodeConnect(msg)
 
         self.writeBytes(stream)
-        threading.Thread(target=self._processMessages).start()
+        Thread(target=self._processMessages).start()
 
         return True
 
     def _processMessages(self):
         while True:
-            msg = self.reader.next()
+            try:
+                msg = self.reader.next()
+            except SSLError as e:
+                print 'An error occured while attempting to read: {0}'.format(e)
+                break
 
             if msg is None:
                 continue
 
-            print 'Processing: {0}'.format(msg)
+            # RTMP initial login
             if msg['msg'] == rtmp.decoder.DataTypes.COMMAND:
                 self.dsId = msg['cmd'][3]['id']
                 self.login(self.user, self.password)
@@ -102,7 +110,7 @@ class RtmpClient:
                 id = self.invoke('loginService', 'performLCDSHeartBeat', [self.acctId, self.session, heartbeatCount, date], None)
                 del self.pendingRequests[id]
                 heartbeatCount += 1
-                print 'Sent heartbeat'
+
                 time.sleep(12)
 
     def login(self, user, password):
@@ -132,7 +140,7 @@ class RtmpClient:
         self.sendMessage(msg)
         self.auth = True
 
-        threading.Thread(target=self._heartbeatThread).start()
+        Thread(target=self._heartbeatThread).start()
 
     def sendMessage(self, msg):
         invokeId = self.nextInvokeId()
