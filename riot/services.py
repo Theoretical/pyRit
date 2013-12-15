@@ -34,7 +34,7 @@ class SummonerService(BaseService):
 
     def getSummonerByName(self, name):
         msg = self.waitForMessage(self.name, 'getSummonerByName', [name])
-        return PublicSummoner(msg['body'])
+        return PublicSummoner(msg['body'], self.client.user)
 
     def getSummonerNames(self, acctList):
         msg = self.waitForMessage(self.name, 'getSummonerNames', [acctList])
