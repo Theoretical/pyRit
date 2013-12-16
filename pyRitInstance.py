@@ -11,7 +11,6 @@ def ClientInstance(client, socket):
     def fallback(args):
         return 'Operation not implemented!'
 
-
     client.connect()
 
     while True:
@@ -27,5 +26,5 @@ def ClientInstance(client, socket):
             'leagues': client.getLeaguesServiceProxy().getLeagueForPlayer,
         }
 
-        socket.send(operations.get(operation, fallback())(args))
+        socket.send(operations.get(operation, fallback)(args))
 

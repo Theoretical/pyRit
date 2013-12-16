@@ -74,13 +74,13 @@ class RtmpClient:
             try:
                 msg = self.reader.next()
             except SSLError as e:
-                print 'An error occured while attempting to read: {0}'.format(e)
+                print 'An error occurred while attempting to read: {0}'.format(e)
                 break
 
             if msg is None:
+                time.sleep(.1)
                 continue
 
-            print msg
             # RTMP initial login
             if msg['msg'] == rtmp.decoder.DataTypes.COMMAND:
                 self.dsId = msg['cmd'][3]['id']
@@ -93,6 +93,7 @@ class RtmpClient:
                     del self.callbacks[invokeId]
                 if invokeId in self.pendingRequests:
                     self.pendingRequests[invokeId] = msg
+
 
     def getPendingRequest(self, invokeId):
         if invokeId in self.pendingRequests:

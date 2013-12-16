@@ -37,7 +37,7 @@ class pyRit:
 
     def start(self, clientCount, debug=False):
         self.createClients(clientCount)
-        self.app.run(host="0.0.0.0", threaded=True, debug=debug)
+        self.app.run(host='0.0.0.0', threaded=True, debug=debug)
 
     def nextClient(self):
         c = self.clients.get(False)
@@ -79,6 +79,6 @@ class pyRit:
             return Response(leagues.toJson(), mimetype='application/json')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     p = pyRit('NA', 'pyrit', 'asdasdzx123', '3.15.13_12_12_05_41')
-    p.start(1)
+    p.start(50)
