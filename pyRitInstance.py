@@ -10,14 +10,12 @@ def ClientInstance(client, socket):
     client.connect()
 
     while True:
-        msg = socket.recv()
+        operation,args = socket.recv()
 
-        # Thanks to broken for this amazing formatting and more pythony implementation! :)
-        operation = msg[0]
-        args = msg[1]
+        print 'Received operation: {0} | Args: {1}'.format(operation, args)
 
-        def fallback():
-            return "Operation not implemented!"
+        def fallback(args):
+            return 'Operation not implemented!'
 
         operations = {
             'name': client.getSummonerService().getSummonerByName,
@@ -28,6 +26,5 @@ def ClientInstance(client, socket):
             'fallback': fallback,
         }
 
-        socket.send(operations.get(operation, "fallback")(args))
+        socket.send(operations.get(operation, 'fallback')(args))
 
-        print msg
