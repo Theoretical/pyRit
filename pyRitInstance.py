@@ -25,8 +25,7 @@ def ClientInstance(client, socket):
             'game': client.getGameService().retrieveInProgressSpectatorGameInfo,
             'stats': client.getPlayerStatsService().getAggregatedStats,
             'leagues': client.getLeaguesServiceProxy().getLeagueForPlayer,
-            'fallback': fallback,
         }
 
-        socket.send(operations.get(operation, 'fallback')(args))
+        socket.send(operations.get(operation, fallback())(args))
 
