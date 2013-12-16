@@ -37,7 +37,7 @@ class pyRit:
 
     def start(self, clientCount, debug=False):
         self.createClients(clientCount)
-        self.app.run(threaded=True, debug=debug)
+        self.app.run(host="0.0.0.0", threaded=True, debug=debug)
 
     def nextClient(self):
         c = self.clients.get(False)
