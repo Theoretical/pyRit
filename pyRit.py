@@ -1,96 +1,84 @@
 from flask import Flask, jsonify, Response
-from multiprocessing import Process
+from json import dumps
+from multiprocessing import Process, Pipe
+from pyRitInstance import ClientInstance
+from Queue import Queue
 from riot.client import LolClient
-from time import sleep
-import json
 
-def launchClient(client):
-    client.connect()
 
 class pyRit:
-    clients = []
-    clientIndex = 0
-
     def __init__(self, region, user, password, version):
         self.region = region
         self.userKey = user
         self.password = password
         self.version = version
 
-        #Setup Flask RESTful routes.
+        #Setup Flask restful routes.
         self.app = Flask(__name__)
         self.buildRoutes()
 
+    def buildRoutes(self):
+        self.app.add_url_rule('/recent/<summoner>', 'history', self.getRecentGames)
+        self.app.add_url_rule('/name/<summonerName>', 'name', self.getSummonerByName)
+        self.app.add_url_rule('/game/<summonerName>', 'game', self.getGameInProgress)
+        self.app.add_url_rule('/ranked/<summoner>/<season>', 'ranked', self.getRankedStats, defaults={'season': 'CURRENT'})
+        self.app.add_url_rule('/leagues/<summoner>', 'leagues', self.getAllLeaguesForPlayer)
+
     def createClients(self, clientCount):
+        self.clients = Queue()
         for i in range(0, clientCount):
             c = LolClient(self.region, '{0}{1}'.format(self.userKey, i), self.password, self.version)
-            p = Process(target=launchClient, args={c})
+            p_in, p_out = Pipe()
+            p = Process(target=ClientInstance, args=(c, p_out), name='pyRit-{0}-{1}{2}'.format(self.region, self.userKey, i))
+
             p.start()
-            self.clients.append(c)
+            self.clients.put_nowait(p_in)
             print 'Launched client: {0}'.format(i)
 
     def start(self, clientCount, debug=False):
         self.createClients(clientCount)
-
-        for i in range(0, len(self.clients)):
-            c = self.clients[i]
-            print '{0} Waiting on auth...'.format(i)
-            while not c.client.auth:
-                sleep(.1)
-
         self.app.run(threaded=True, debug=debug)
 
     def nextClient(self):
-        c = self.clients[self.clientIndex]
-        if self.clientIndex == len(self.clients):
-            self.clientIndex = 0
-        else:
-            self.clientIndex += 1
+        c = self.clients.get(False)
+        self.clients.put_nowait(c)
         return c
 
-    def buildRoutes(self):
-        self.app.add_url_rule('/history/<summoner>', 'history', self.getRecentGames)
-        self.app.add_url_rule('/public/<acctId>', 'public', self.getAllPublicSummonerDataByAccount)
-        self.app.add_url_rule('/name/<summonerName>', 'name', self.getSummonerByName)
-        self.app.add_url_rule('/game/<summonerName>', 'game', self.getGameInProgress)
-        self.app.add_url_rule('/ranked/<acctId>/<season>', 'ranked', self.getRankedStats, defaults={'season': 'CURRENT'})
-        self.app.add_url_rule('/leagues/<summonerName>', 'leagues', self.getAllLeaguesForPlayer)
-        self.app.add_url_rule('/store', 'store', self.getStoreUrl)
+    def invoke(self, operation, args):
+        client = self.nextClient()
+        client.send([operation, args])
+        return client.recv()
 
-    def getStoreUrl(self):
-        return self.nextClient().getLoginService().getStoreUrl()
+    def getSummonerByName(self, summonerName):
+        summoner = self.invoke('name', [summonerName])
+        return Response(summoner.toJson(), mimetype='application/json')
 
     def getRecentGames(self, summoner):
         if summoner.isdigit():
-            recent = self.nextClient().getPlayerStatsService().getRecentGames(summoner)
+            recent = self.invoke('recent', [summoner])
             return Response(recent.toJson(), mimetype='application/json')
         else:
-            publicSummoner = self.nextClient().getSummonerService().getSummonerByName(summoner)
-            recent = self.nextClient().getPlayerStatsService().getRecentGames(publicSummoner.acctId)
+            publicSummoner = self.invoke('name', [summoner])
+            recent = self.invoke('recent', [publicSummoner.acctId])
             return Response(recent.toJson(), mimetype='application/json')
-
-    def getAllPublicSummonerDataByAccount(self, acctId):
-        pass
-
-    def getSummonerByName(self, summonerName):
-        summoner = self.nextClient().getSummonerService().getSummonerByName(summonerName)
-        return Response(summoner.toJson(), mimetype='application/json')
 
     def getGameInProgress(self, summonerName):
-        game = self.nextClient().getGameService().retrieveInProgressSpectatorGameInfo(summonerName)
-        return Response(json.dumps(game, sort_keys=True, indent=4), mimetype='application/json')
+        game = self.invoke('game', [summonerName])
+        return Response(dumps(game, sort_keys=True, indent=4), mimetype='application/json')
 
-    def getRankedStats(self, acctId, season):
+    def getRankedStats(self, summoner, season):
         pass
 
-    def getAllLeaguesForPlayer(self, summonerName):
-        if summonerName.isdigit():
-            return jsonify(self.nextClient().getLeaguesServiceProxy().getAllLeaguesForPlayer(summonerName))
+    def getAllLeaguesForPlayer(self, summoner):
+        if summoner.isdigit():
+            leagues = self.invoke('leagues', [summoner])
+            return Response(leagues.toJson(), mimetype='application/json')
         else:
-            publicSummoner = self.nextClient().getSummonerService().getSummonerByName(summonerName)
-            return jsonify(self.nextClient().getLeaguesServiceProxy().getAllLeaguesForPlayer(publicSummoner.summonerId))
+            publicSummoner = self.invoke('name', [summoner])
+            leagues = self.invoke('leagues', [publicSummoner.summonerId])
+            return Response(leagues.toJson(), mimetype='application/json')
 
 
 if __name__ == "__main__":
     p = pyRit('NA', 'pyrit', 'asdasdzx123', '3.15.13_12_12_05_41')
-    p.start(50)
+    p.start(5)

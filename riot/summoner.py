@@ -3,7 +3,7 @@ import serialize
 
 class PublicSummoner(serialize.Serialize):
     def __init__(self, body, clientUser):
-        self.client = {{'User': clientUser}}
+        self.client = [clientUser]
         self.internalName = body['internalName']
         self.name = body['name']
         self.dataVersion = body['dataVersion']

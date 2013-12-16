@@ -64,7 +64,8 @@ class RtmpClient:
         stream = self.encoder.encodeConnect(msg)
 
         self.writeBytes(stream)
-        Thread(target=self._processMessages).start()
+        self.processThread = Thread(target=self._processMessages)
+        self.processThread.start()
 
         return True
 
