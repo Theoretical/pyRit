@@ -32,16 +32,16 @@ class SummonerService(BaseService):
         BaseService.__init__(self, client)
         self.name = 'summonerService'
 
-    def getSummonerByName(self, name):
-        msg = self.waitForMessage(self.name, 'getSummonerByName', [name])
+    def getSummonerByName(self, args):
+        msg = self.waitForMessage(self.name, 'getSummonerByName', args)
         return PublicSummoner(msg['body'], self.client.user)
 
     def getSummonerNames(self, acctList):
-        msg = self.waitForMessage(self.name, 'getSummonerNames', [acctList])
+        msg = self.waitForMessage(self.name, 'getSummonerNames', acctList)
         return msg['body']
 
     def getAllPublicSummonerDataByAccount(self, acctId):
-        msg = self.waitForMessage(self.name, 'getAllPublicSummonerDataByAccount', [acctId])
+        msg = self.waitForMessage(self.name, 'getAllPublicSummonerDataByAccount', acctId)
         return msg
 
 
@@ -51,11 +51,11 @@ class PlayerStatsService(BaseService):
         self.name = 'playerStatsService'
 
     def getRecentGames(self, acctId):
-        msg = self.waitForMessage(self.name, 'getRecentGames', [acctId])
+        msg = self.waitForMessage(self.name, 'getRecentGames', acctId)
         return RecentGames(msg['body'])
 
-    def getAggregatedStats(self, acctId, season):
-        msg = self.waitForMessage(self.name, 'getAggregatedStats', [acctId, season])
+    def getAggregatedStats(self, args):
+        msg = self.waitForMessage(self.name, 'getAggregatedStats', args)
         return msg['body']
 
 
@@ -65,7 +65,7 @@ class LeaguesServiceProxy(BaseService):
         self.name = 'leaguesServiceProxy'
 
     def getLeagueForPlayer(self, summonerId):
-        msg = self.waitForMessage(self.name, 'getLeagueForPlayer', [summonerId])
+        msg = self.waitForMessage(self.name, 'getLeagueForPlayer', summonerId)
         return SummonerLeagues(msg['body'])
 
 
@@ -75,4 +75,4 @@ class GameService(BaseService):
         self.name = 'gameService'
 
     def retrieveInProgressSpectatorGameInfo(self, summonerName):
-        return self.waitForMessage(self.name, 'retrieveInProgressSpectatorGameInfo', [summonerName])['body']
+        return self.waitForMessage(self.name, 'retrieveInProgressSpectatorGameInfo', summonerName)['body']

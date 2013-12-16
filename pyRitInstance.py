@@ -12,27 +12,22 @@ def ClientInstance(client, socket):
     while True:
         msg = socket.recv()
 
+        # Thanks to broken for this amazing formatting and more pythony implementation! :)
         operation = msg[0]
         args = msg[1]
 
-        if  operation == 'name':
-            summoner = client.getSummonerService().getSummonerByName(args[0])
-            socket.send(summoner)
+        def fallback():
+            return "Operation not implemented!"
 
-        elif operation == 'recent':
-            recent = client.getPlayerStatsService().getRecentGames(args[0])
-            socket.send(recent)
+        operations = {
+            'name': client.getSummonerService().getSummonerByName,
+            'recent': client.getPlayerStatsService().getRecentGames,
+            'game': client.getGameService().retrieveInProgressSpectatorGameInfo,
+            'stats': client.getPlayerStatsService().getAggregatedStats,
+            'leagues': client.getLeaguesServiceProxy().getLeagueForPlayer,
+            'fallback': fallback,
+        }
 
-        elif operation == 'game':
-            gameInProgress = client.getGameService().retrieveInProgressSpectatorGameInfo(args[0])
-            socket.send(gameInProgress)
-
-        elif operation == 'stats':
-            stats = client.getPlayerStatsService().getAggregatedStats(args[0], args[1])
-            socket.send(stats)
-
-        elif operation == 'leagues':
-            leagues = client.getLeaguesServiceProxy().getLeagueForPlayer(args[0])
-            socket.send(leagues)
+        socket.send(operations.get(operation, "fallback")(args))
 
         print msg
