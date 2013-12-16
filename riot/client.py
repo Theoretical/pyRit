@@ -4,17 +4,20 @@ from riot.services import *
 
 class LolClient:
     def __init__(self, region, user, password, version):
-        self.client = RtmpClient(region, user, password, version)
+        self._client = RtmpClient(region, user, password, version)
 
     def connect(self):
-        if not self.client.connect():
+        if not self._client.connect():
             return False
 
-        self._summonerService = SummonerService(self.client)
-        self._playerStatsService = PlayerStatsService(self.client)
-        self._leaguesServiceProxy = LeaguesServiceProxy(self.client)
-        self._gameService = GameService(self.client)
-        self._loginService = LoginService(self.client)
+        self._summonerService = SummonerService(self._client)
+        self._playerStatsService = PlayerStatsService(self._client)
+        self._leaguesServiceProxy = LeaguesServiceProxy(self._client)
+        self._gameService = GameService(self._client)
+        self._loginService = LoginService(self._client)
+
+    def getRTMPClient(self):
+        return self._client
 
     def getSummonerService(self):
         return self._summonerService

@@ -81,4 +81,4 @@ class pyRit:
 
 if __name__ == "__main__":
     p = pyRit('NA', 'pyrit', 'asdasdzx123', '3.15.13_12_12_05_41')
-    p.start(5)
+    p.start(1)

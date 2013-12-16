@@ -32,7 +32,7 @@ def ClientInstance(client, socket):
             socket.send(stats)
 
         elif operation == 'leagues':
-            leagues = client.getLeaguesServiceProxy().getAllLeaguesForPlayer(args[0])
+            leagues = client.getLeaguesServiceProxy().getLeagueForPlayer(args[0])
             socket.send(leagues)
 
         print msg

@@ -80,6 +80,7 @@ class RtmpClient:
             if msg is None:
                 continue
 
+            print msg
             # RTMP initial login
             if msg['msg'] == rtmp.decoder.DataTypes.COMMAND:
                 self.dsId = msg['cmd'][3]['id']
@@ -125,6 +126,7 @@ class RtmpClient:
 
         self.acctId = msg.body['accountSummary']['accountId']
         self.session = msg.body['token']
+        summonerName = msg.body['accountSummary']['summonerName']
 
         msg = self.invokeCommandMessage('auth', CommandMessage.LOGIN_OPERATION, base64.encodestring('{0}:{1}'.format(self.user, self.session)))
 
@@ -140,6 +142,11 @@ class RtmpClient:
         msg.clientId = 'gn-{0}'.format(self.acctId)
         self.sendMessage(msg)
         self.auth = True
+
+        if summonerName is None:
+            print 'Not summoner set, creating default now so we can use gameService.'
+            self.invoke('summonerService', 'createDefaultSummoner', [self.user])
+
 
         print 'Authenticated as user: {0}'.format(self.user)
         Thread(target=self._heartbeatThread).start()

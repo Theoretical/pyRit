@@ -64,8 +64,8 @@ class LeaguesServiceProxy(BaseService):
         BaseService.__init__(self, client)
         self.name = 'leaguesServiceProxy'
 
-    def getAllLeaguesForPlayer(self, summonerId):
-        msg = self.waitForMessage(self.name, 'getAllLeaguesForPlayer', [summonerId])
+    def getLeagueForPlayer(self, summonerId):
+        msg = self.waitForMessage(self.name, 'getLeagueForPlayer', [summonerId])
         return SummonerLeagues(msg['body'])
 
 
