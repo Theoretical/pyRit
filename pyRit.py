@@ -4,7 +4,8 @@ from multiprocessing import Process, Pipe
 from pyRitInstance import ClientInstance
 from Queue import Queue
 from riot.client import LolClient
-
+from time import time, sleep
+from threading import Thread
 
 class pyRit:
     def __init__(self, region, user, password, version):
@@ -12,6 +13,8 @@ class pyRit:
         self.userKey = user
         self.password = password
         self.version = version
+        self.requests = 0
+        self.clientIndex = 0
 
         #Setup Flask restful routes.
         self.app = Flask(__name__)
@@ -23,6 +26,29 @@ class pyRit:
         self.app.add_url_rule('/game/<summonerName>', 'game', self.getGameInProgress)
         self.app.add_url_rule('/ranked/<summoner>/<season>', 'ranked', self.getRankedStats, defaults={'season': 'CURRENT'})
         self.app.add_url_rule('/leagues/<summoner>', 'leagues', self.getAllLeaguesForPlayer)
+        self.app.before_request(self.processThrottle)
+
+    def _throttleThread(self):
+        start = time()
+        REQUEST_THROTTLE = 500
+
+        while True:
+            if start <= time() + 5:
+                start = time()
+                if self.requests > REQUEST_THROTTLE and self.clients.qsize() < 50:
+                    c = LolClient(self.region, '{0}{1}'.format(self.userKey, self.clientIndex), self.password, self.version)
+                    p_in, p_out = Pipe()
+                    p = Process(target=ClientInstance, args=(c, p_out), name='pyRit-{0}-{1}{2}'.format(self.region, self.userKey, self.clientIndex))
+                    p.start()
+                    self.clients.put_nowait(p_in)
+                    self.clientIndex += 1
+
+                    print 'Launched client {0} due to throttle'.format(self.clientIndex)
+                    self.requests = 0
+            sleep(.5)
+
+    def processThrottle(self):
+        self.requests += 1
 
     def createClients(self, clientCount):
         self.clients = Queue()
@@ -33,14 +59,20 @@ class pyRit:
 
             p.start()
             self.clients.put_nowait(p_in)
+            self.clientIndex += 1
             print 'Launched client: {0}'.format(i)
 
     def start(self, clientCount, debug=False):
         self.createClients(clientCount)
+        Thread(target=self._throttleThread).start()
         self.app.run(host='0.0.0.0', threaded=True, debug=debug)
 
     def nextClient(self):
         c = self.clients.get(False)
+        if not c.getRTMPClient().auth:
+            self.clients.put_nowait(c)
+            return self.nextClient()
+
         self.clients.put_nowait(c)
         return c
 
@@ -81,4 +113,4 @@ class pyRit:
 
 if __name__ == '__main__':
     p = pyRit('NA', 'pyrit', 'asdasdzx123', '3.15.13_12_12_05_41')
-    p.start(50)
+    p.start(1)

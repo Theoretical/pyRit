@@ -14,7 +14,10 @@ def ClientInstance(client, socket):
     client.connect()
 
     while True:
-        operation,args = socket.recv()
+        try:
+            operation,args = socket.recv()
+        except EOFError:
+            continue
 
         print 'Received operation: {0} | Args: {1}'.format(operation, args)
 
