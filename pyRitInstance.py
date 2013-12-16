@@ -7,15 +7,17 @@ def ClientInstance(client, socket):
     @type socket: Pipe
     """
 
+    # Little fallback for our operations from pyRit, just to be sure that our callback is implemented.
+    def fallback(args):
+        return 'Operation not implemented!'
+
+
     client.connect()
 
     while True:
         operation,args = socket.recv()
 
         print 'Received operation: {0} | Args: {1}'.format(operation, args)
-
-        def fallback(args):
-            return 'Operation not implemented!'
 
         operations = {
             'name': client.getSummonerService().getSummonerByName,
