@@ -69,10 +69,6 @@ class pyRit:
 
     def nextClient(self):
         c = self.clients.get(False)
-        if not c.getRTMPClient().auth:
-            self.clients.put_nowait(c)
-            return self.nextClient()
-
         self.clients.put_nowait(c)
         return c
 
