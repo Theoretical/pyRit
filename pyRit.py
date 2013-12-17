@@ -35,7 +35,7 @@ class pyRit:
         while True:
             if start <= time() + 5:
                 start = time()
-                if self.requests > REQUEST_THROTTLE and self.clients.qsize() < 50:
+                if self.requests > REQUEST_THROTTLE and self.clientIndex < 50:
                     c = LolClient(self.region, '{0}{1}'.format(self.userKey, self.clientIndex), self.password, self.version)
                     p_in, p_out = Pipe()
                     p = Process(target=ClientInstance, args=(c, p_out), name='pyRit-{0}-{1}{2}'.format(self.region, self.userKey, self.clientIndex))
