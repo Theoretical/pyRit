@@ -149,9 +149,12 @@ class RtmpClient:
         Thread(target=self._heartbeatThread).start()
 
     def onSummonerData(self, result, msg):
-        summonerName = msg.body['summoner']['name']
+        if result == u'_error' or msg.body == None:
+            print 'Not summoner set, creating default now so we can use gameService.'
+            self.invoke('summonerService', 'createDefaultSummoner', [self.user])
+            return
 
-        if summonerName is None:
+        if msg.body['summoner']['name'] is None:
             print 'Not summoner set, creating default now so we can use gameService.'
             self.invoke('summonerService', 'createDefaultSummoner', [self.user])
 
