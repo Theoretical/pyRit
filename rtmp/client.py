@@ -6,11 +6,11 @@ import rtmp.encoder
 import time
 import uuid
 
-from gevent.ssl import SSLSocket, socket, SSLError
 from pyamf import TypedObject
 from pyamf.flex.messaging import RemotingMessage, CommandMessage
 from riot.region import Region
 from riot.login import GetLoginToken, AuthenticationCredentials
+from ssl import SSLSocket, socket, SSLError
 from threading import Thread
 
 

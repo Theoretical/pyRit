@@ -6,6 +6,8 @@ from Queue import Queue
 from riot.client import LolClient
 from time import time, sleep
 from threading import Thread
+from version import fetch_current_version
+
 
 class pyRit:
     def __init__(self, region, user, password, version):
@@ -108,5 +110,6 @@ class pyRit:
 
 
 if __name__ == '__main__':
-    p = pyRit('NA', 'pyrit', 'asdasdzx123', '3.15.13_12_12_05_41')
+    version = fetch_current_version()
+    p = pyRit('NA', 'pyrit', 'asdasdzx123', version)
     p.start(1)
