@@ -89,5 +89,6 @@ class pyRit:
 
 if __name__ == '__main__':
     version = fetch_current_version()
+    print 'Launching pyRit with Riot RTMP Version: {0}'.format(version)
     p = pyRit('NA', 'pyrit', 'asdasdzx123', version)
     p.start(1)
