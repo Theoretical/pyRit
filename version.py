@@ -24,4 +24,5 @@ def fetch_current_version():
             start = 'CURRENT_VERSION'
             end = 'String'
             data = tag.bytes
-            return data[data.index(start) + len(start):data.index(end)]
+            version = data[data.index(start) + len(start):data.index(end)]
+            return version[2:len(version)-1]
