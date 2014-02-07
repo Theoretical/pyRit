@@ -148,7 +148,7 @@ class RtmpClient:
         print 'Authenticated as user: {0}'.format(self.user)
         Thread(target=self._heartbeatThread).start()
 
-    def onSummonerData(self, msg):
+    def onSummonerData(self, result, msg):
         summonerName = msg.body['summoner']['name']
 
         if summonerName is None:
